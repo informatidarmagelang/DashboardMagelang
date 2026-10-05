@@ -353,7 +353,7 @@
 
   // ---- Tabel departemen ----
   // Tempel tautan CSV sheet DEPT (Terbitkan ke web, pilih sheet DEPT, format CSV).
-  var DEPT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRZyp3J22u9hmEdnLLic2TOWr6Hp-W0sfohspdI5gr2xhNsz7DetQdB3dTrh4kejjEz8RyHMnIeL2U/pub?output=csv";
+  var DEPT_CSV_URL = "";
   var fullNumbers = false;
 
   // Kolom: kode, nama, target, sales H-1, sales hari ini, % hari ini, sales MTD, % MTD, -/+ %, -/+ nilai
@@ -443,7 +443,7 @@
 
   // ---- Tabel sales per 2 jam ----
   // Tempel tautan CSV sheet "SALES PER 2 JAM" (Terbitkan ke web, pilih sheet itu, format CSV).
-  var STAFF_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRZyp3J22u9hmEdnLLic2TOWr6Hp-W0sfohspdI5gr2xhNsz7DetQdB3dTrh4kejjEz8RyHMnIeL2U/pub?output=csv";
+  var STAFF_CSV_URL = "";
 
   // Kolom: NIP, nama, shift, target hari ini, target FP, target Comser, sales hari ini, FP, prod., CR FP (%), Comser
   var STAFF = [
@@ -590,7 +590,7 @@
     "195936": "1UCNNyXfH9oeVagoSspYH00mUtXN82Ndx"
   };
   // Opsional: tempel tautan CSV sheet "FOTO SMT" (Terbitkan ke web, format CSV; kolom NIP, NAMA, FOTO SMT).
-  var STAFF_PHOTO_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRZyp3J22u9hmEdnLLic2TOWr6Hp-W0sfohspdI5gr2xhNsz7DetQdB3dTrh4kejjEz8RyHMnIeL2U/pub?output=csv";
+  var STAFF_PHOTO_CSV_URL = "";
   function staffPhotoFor(nip) {
     var v = STAFF_PHOTOS[nip], id = v ? driveId(v) : "";
     return id ? "https://drive.google.com/thumbnail?id=" + id + "&sz=w800" : "";
