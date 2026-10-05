@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Penjualan Harian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef1f4;
+    --panel: #ffffff;
+    --ink: #14213d;
+    --muted: #5d6b82;
+    --line: #d9dfe7;
+    --track: #e4e9f0;
+    --sales: #14213d;
+    --fp: #0f8b8d;
+    --comser: #5b4bc4;
+    --warn: #b7791f;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1522; --panel: #162033; --ink: #eaf0fa; --muted: #93a2bc;
+      --line: #263450; --track: #22304a;
+      --sales: #8fb4ff; --fp: #4fd1c5; --comser: #a899ff; --warn: #f0b84a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-variant-numeric: tabular-nums; line-height: 1.5;
+  }
+  main { max-width: 1200px; margin: 0 auto; padding: 14px 20px 48px; }
+  header { margin-bottom: 10px; }
+  header > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 16px; }
+  h1 { margin: 0; font-size: clamp(1.05rem, 2.2vw, 1.3rem); font-weight: 800; letter-spacing: -0.01em; }
+  .date { color: var(--muted); font-size: .8rem; }
+  #board { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  section.metric { padding: 12px 16px 14px; border-top: 4px solid var(--c); min-width: 0; }
+  section.metric + section.metric { border-left: 1px solid var(--line); }
+  section.metric h2 { margin: 0 0 8px; font-size: .95rem; font-weight: 700; color: var(--c); }
+  section.metric .hint { display: none; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .label { font-size: .75rem; color: var(--muted); font-weight: 500; }
+  .value { font-size: clamp(1rem, 1.7vw, 1.3rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; margin: 1px 0 6px; white-space: nowrap; }
+  .value small { font-size: .5em; font-weight: 600; color: var(--muted); margin-right: 4px; letter-spacing: 0; }
+  .bar { height: 6px; border-radius: 99px; background: var(--track); overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--c); border-radius: 99px; transition: width 900ms cubic-bezier(.2,.7,.2,1); }
+  .pct { margin-top: 6px; font-size: clamp(1.3rem, 2.6vw, 1.75rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--c); }
+  details { margin-top: 24px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 20px; }
+  summary { cursor: pointer; font-weight: 700; }
+  summary:focus-visible, button:focus-visible, textarea:focus-visible { outline: 3px solid var(--fp); outline-offset: 2px; }
+  textarea { width: 100%; min-height: 110px; margin-top: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: .8rem/1.4 ui-monospace, Menlo, Consolas, monospace; }
+  button { margin-top: 10px; padding: 9px 18px; border: 0; border-radius: 8px; background: var(--ink); color: var(--bg); font: 700 .9rem inherit; font-family: inherit; cursor: pointer; }
+  .msg { margin-left: 12px; font-size: .85rem; color: var(--muted); }
+  @media (max-width: 900px) { #board { grid-template-columns: 1fr; } section.metric + section.metric { border-left: 0; } }
+  @media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Dashboard Penjualan Harian</h1>
+      <div class="date" id="date"></div>
+      <div class="date" id="sync" role="status"></div>
+    </div>
+  </header>
+
+  <div class="panel" id="board"></div>
+
+  <!-- Area kosong untuk data tambahan di bawah ringkasan -->
+  <div id="extra"></div>
+
+  <details>
+    <summary>Perbarui data dari spreadsheet</summary>
+    <p class="label" style="margin:10px 0 0">Salin dua baris dari spreadsheet (judul kolom + nilai), tempel di sini.</p>
+    <textarea id="paste" spellcheck="false" aria-label="Data spreadsheet"></textarea>
+    <button id="apply" type="button">Tampilkan</button><span class="msg" id="msg" role="status"></span>
+  </details>
+</main>
+
+<script>
+  // Ganti nilai di bawah ini untuk memperbarui dashboard. null = tidak ada data.
+  var DATA = {
+    "SALES TODAY": 68519594,
+    "% TODAY": null,
+    "SALES MTD": 327009056,
+    "% MTD": 10.24,
+    "FP TODAY": 11,
+    "% FP TODAY": 2.52,
+    "FP MTD": 71,
+    "% FP MTD": 16.28,
+    "COMSER TODAY": 0,
+    "% COMSER TODAY": 0,
+    "COMSER MTD": 844144,
+    "% COMSER MTD": 5.83
+  };
+
+  var GROUPS = [
+    { title: "Sales", hint: "Penjualan dalam Rupiah", color: "var(--sales)", rp: true,
+      today: ["SALES TODAY", "% TODAY"], mtd: ["SALES MTD", "% MTD"] },
+    { title: "FP", hint: "Jumlah FP", color: "var(--fp)", rp: false,
+      today: ["FP TODAY", "% FP TODAY"], mtd: ["FP MTD", "% FP MTD"] },
+    { title: "Comser", hint: "Comser dalam Rupiah", color: "var(--comser)", rp: true,
+      today: ["COMSER TODAY", "% COMSER TODAY"], mtd: ["COMSER MTD", "% COMSER MTD"] }
+  ];
+
+  var nf = new Intl.NumberFormat("id-ID");
+  var pf = new Intl.NumberFormat("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  function col(label, keys, g) {
+    var v = DATA[keys[0]], p = DATA[keys[1]];
+    if (p == null) p = 0;
+    var val = (v == null) ? "—" : (g.rp ? "<small>Rp</small>" : "") + nf.format(v);
+    var w = Math.max(0, Math.min(100, p));
+    var pct = '<div class="pct">' + pf.format(p) + '%</div>';
+    return '<div><div class="label">' + label + '</div><div class="value">' + val +
+      '</div><div class="bar" role="img" aria-label="' + label + ' ' + pf.format(p) + ' persen' +
+      '"><i data-w="' + w + '"></i></div>' + pct + '</div>';
+  }
+
+  function render() {
+    var html = "";
+    GROUPS.forEach(function (g) {
+      html += '<section class="metric" style="--c:' + g.color + '"><h2>' + g.title + '</h2><p class="hint">' + g.hint +
+        '</p><div class="cols">' + col("Hari ini", g.today, g) + col("Bulan berjalan (MTD)", g.mtd, g) + '</div></section>';
+    });
+    document.getElementById("board").innerHTML = html;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        document.querySelectorAll(".bar > i").forEach(function (el) { el.style.width = el.dataset.w + "%"; });
+      });
+    });
+  }
+
+  function num(s) {
+    s = String(s).trim();
+    if (s === "" || s === "-") return null;
+    var isPct = s.indexOf("%") > -1;
+    var n = parseFloat(s.replace(/,/g, "").replace("%", ""));
+    return isNaN(n) ? null : { n: n, pct: isPct };
+  }
+
+  function parsePaste(text) {
+    var lines = text.split(/\r?\n/).filter(function (l) { return l.trim(); });
+    if (lines.length < 2) throw new Error("Perlu 2 baris: judul dan nilai.");
+    var split = function (l) { return l.indexOf("\t") > -1 ? l.split("\t") : l.split(/\s{2,}/); };
+    var heads = split(lines[0]).map(function (h) { return h.trim().replace(/\s+/g, " ").toUpperCase(); });
+    var vals = split(lines[1]);
+    var out = {}, count = 0;
+    heads.forEach(function (h, i) {
+      if (!(h in DATA)) return;
+      var r = num(vals[i] == null ? "" : vals[i]);
+      // kolom persen wajib berformat persen; kalau tidak, dianggap kosong
+      if (h.charAt(0) === "%") out[h] = (r && r.pct) ? r.n : null;
+      else out[h] = (r && !r.pct) ? r.n : null;
+      count++;
+    });
+    if (!count) throw new Error("Judul kolom tidak dikenali.");
+    return out;
+  }
+
+  document.getElementById("apply").addEventListener("click", function () {
+    var msg = document.getElementById("msg");
+    try {
+      var parsed = parsePaste(document.getElementById("paste").value);
+      Object.keys(parsed).forEach(function (k) { DATA[k] = parsed[k]; });
+      render();
+      msg.textContent = "Data diperbarui.";
+    } catch (e) { msg.textContent = e.message; }
+  });
+
+  document.getElementById("date").textContent =
+    new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  render();
+
+  // ---- Sambungan ke Google Sheets ----
+  // Tempel tautan CSV hasil "Terbitkan ke web" di antara tanda kutip.
+  // Contoh: "https://docs.google.com/spreadsheets/d/e/XXXX/pub?gid=1234925789&single=true&output=csv"
+  var SHEET_CSV_URL = "";
+  var REFRESH_MS = 5 * 60 * 1000;
+
+  function parseCsv(t) {
+    var rows = [], row = [], f = "", q = false, i, c;
+    for (i = 0; i < t.length; i++) {
+      c = t.charAt(i);
+      if (q) {
+        if (c === '"') { if (t.charAt(i + 1) === '"') { f += '"'; i++; } else q = false; }
+        else f += c;
+      } else if (c === '"') q = true;
+      else if (c === ",") { row.push(f); f = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (c === "\r" && t.charAt(i + 1) === "\n") i++;
+        row.push(f); rows.push(row); row = []; f = "";
+      } else f += c;
+    }
+    if (f !== "" || row.length) { row.push(f); rows.push(row); }
+    return rows;
+  }
+
+  function setSync(text) {
+    var el = document.getElementById("sync");
+    if (el) el.textContent = text;
+  }
+
+  function loadSheet() {
+    if (!SHEET_CSV_URL) return;
+    fetch(SHEET_CSV_URL, { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+      .then(function (t) {
+        var rows = parseCsv(t).filter(function (r) { return r.join("").trim(); });
+        if (rows.length < 2) throw new Error("Sheet kosong");
+        var parsed = parsePaste(rows[0].join("\t") + "\n" + rows[1].join("\t"));
+        Object.keys(parsed).forEach(function (k) { DATA[k] = parsed[k]; });
+        render();
+        setSync("Data dari Google Sheets, " + new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }));
+      })
+      .catch(function (e) { setSync("Gagal membaca Google Sheets (" + e.message + "). Menampilkan data terakhir."); });
+  }
+
+  if (SHEET_CSV_URL) { setSync("Memuat data..."); loadSheet(); setInterval(loadSheet, REFRESH_MS); }
+</script>
+</body>
+</html>
