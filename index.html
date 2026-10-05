@@ -19,13 +19,15 @@
     --fp: #0f8b8d;
     --comser: #5b4bc4;
     --warn: #b7791f;
+    --neg: #c0392b;
+    --pos: #1b8a5a;
     --radius: 14px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #0e1522; --panel: #162033; --ink: #eaf0fa; --muted: #93a2bc;
       --line: #263450; --track: #22304a;
-      --sales: #8fb4ff; --fp: #4fd1c5; --comser: #a899ff; --warn: #f0b84a;
+      --sales: #8fb4ff; --fp: #4fd1c5; --comser: #a899ff; --warn: #f0b84a; --neg: #ff8a7a; --pos: #5fd3a0;
     }
   }
   * { box-sizing: border-box; }
@@ -35,7 +37,7 @@
     font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     font-variant-numeric: tabular-nums; line-height: 1.5;
   }
-  main { max-width: 1200px; margin: 0 auto; padding: 14px 20px 48px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 14px 20px 20px; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
   header { margin-bottom: 10px; }
   header > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 16px; }
   h1 { margin: 0; font-size: clamp(1.05rem, 2.2vw, 1.3rem); font-weight: 800; letter-spacing: -0.01em; }
@@ -53,19 +55,113 @@
   .bar { height: 6px; border-radius: 99px; background: var(--track); overflow: hidden; }
   .bar > i { display: block; height: 100%; width: 0; background: var(--c); border-radius: 99px; transition: width 900ms cubic-bezier(.2,.7,.2,1); }
   .pct { margin-top: 6px; font-size: clamp(1.3rem, 2.6vw, 1.75rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--c); }
-  details { margin-top: 24px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 20px; }
-  summary { cursor: pointer; font-weight: 700; }
-  summary:focus-visible, button:focus-visible, textarea:focus-visible { outline: 3px solid var(--fp); outline-offset: 2px; }
-  textarea { width: 100%; min-height: 110px; margin-top: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: .8rem/1.4 ui-monospace, Menlo, Consolas, monospace; }
+  button:focus-visible { outline: 3px solid var(--fp); outline-offset: 2px; }
   button { margin-top: 10px; padding: 9px 18px; border: 0; border-radius: 8px; background: var(--ink); color: var(--bg); font: 700 .9rem inherit; font-family: inherit; cursor: pointer; }
-  .msg { margin-left: 12px; font-size: .85rem; color: var(--muted); }
+  .lower { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; align-items: stretch; flex: 1 1 auto; min-height: 300px; }
+  .deptwrap { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 10px 8px; min-width: 0; display: flex; flex-direction: column; min-height: 340px; }
+  .dept-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .dept-head h2 { margin: 0; font-size: .95rem; font-weight: 700; }
+  .dept-head .sub { color: var(--muted); font-size: .72rem; }
+  .dept-head button { margin: 0; padding: 5px 10px; font-size: .72rem; font-weight: 700; }
+  .scroll { overflow: auto; flex: 1 1 0; min-height: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: .62rem; line-height: 1.25; }
+  th { text-align: right; font-weight: 600; color: var(--muted); padding: 3px 4px; border-bottom: 2px solid var(--line); white-space: nowrap; }
+  td { text-align: right; padding: 2px 4px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 90px; }
+  td .code { color: var(--muted); font-weight: 600; margin-right: 3px; }
+  tr.total td { font-weight: 800; border-top: 2px solid var(--ink); border-bottom: 0; }
+  .neg { color: var(--neg); }
+  .pos { color: var(--pos); }
+  :root { --sh: 176px; --photo-w: 40%; --photo-fit: cover; }
+  .hbtn { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .ctl { display: flex; align-items: center; gap: 4px; }
+  .dept-head button.ic { padding: 3px 8px; min-width: 28px; }
+  .dept-head button.alt { background: var(--track); color: var(--ink); }
+  #unit { display: none; }
+  .tablemode #unit { display: inline-block; }
+  .deptwrap:not(.tablemode) #dept-unit, .deptwrap:not(.tablemode) #staff-unit { display: none; }
+  .deptwrap .scroll { display: none; }
+  .deptwrap.tablemode .scroll { display: block; }
+  .deptwrap.tablemode .vp, .deptwrap.tablemode .ctl { display: none; }
+  .vp { overflow: hidden; flex: 1 1 0; min-height: 0; }
+  .track { transition: transform 600ms cubic-bezier(.2,.7,.2,1); will-change: transform; }
+  .track.nt { transition: none !important; }
+  .slide { height: var(--sh); padding: 8px 10px; display: flex; flex-direction: column; justify-content: center; gap: clamp(6px, 1.2vh, 14px); }
+  .s-title { font-size: clamp(1.3rem, 2.6vw, 2.2rem); font-weight: 800; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .s-title.mid { font-size: clamp(1rem, 1.7vw, 1.4rem); }
+  .s-title.long { font-size: clamp(.95rem, 1.5vw, 1.25rem); }
+  .s-title .code { color: var(--muted); font-weight: 700; font-size: .55em; }
+  .s-title .tag { font-size: .8rem; font-weight: 700; padding: 1px 9px; border-radius: 99px; background: var(--track); color: var(--muted); }
+  .sbar { height: 10px; }
+  .slide.hasimg { flex-direction: row; align-items: stretch; justify-content: space-between; gap: 16px; }
+  .s-main { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: clamp(6px, 1.2vh, 14px); }
+  .slide.hasimg .sgrid { grid-template-columns: repeat(2, 1fr); }
+  .slide.hasimg .m .v { font-size: clamp(.95rem, 1.6vw, 1.4rem); }
+  .slide.hasimg .m .l { font-size: .85rem; }
+  .photo { height: 100%; width: var(--photo-w); object-fit: var(--photo-fit); object-position: center; border: 0; border-radius: 0; background: none; mix-blend-mode: multiply; flex: none; }
+  @media (prefers-color-scheme: dark) { .photo { mix-blend-mode: normal; } }
+  .sgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 16px; }
+  .m .l { font-size: .78rem; color: var(--muted); font-weight: 500; }
+  .m .v { font-size: clamp(.9rem, 1.5vw, 1.1rem); font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+  @media (min-height: 700px) and (min-width: 601px) {
+    .sgrid { grid-template-columns: repeat(2, 1fr); gap: clamp(8px, 1.6vh, 18px) 24px; }
+    .m .l { font-size: .95rem; }
+    .m .v { font-size: clamp(1.3rem, 2.3vw, 2rem); }
+  }
+  @media (max-width: 600px) { .sgrid { grid-template-columns: repeat(2, 1fr); } .slide.hasimg { flex-direction: column; gap: 6px; } .photo { order: -1; height: 80px; width: 110px; align-self: flex-end; } .slide.hasimg .m .v { font-size: 1rem; } }
+  @media (prefers-reduced-motion: reduce) { .track { transition: none; } }
+  .staff th:first-child, .staff td:first-child { min-width: 0; }
+  .staff th:nth-child(2), .staff td:nth-child(2), .staff th:nth-child(3), .staff td:nth-child(3) { text-align: left; }
+  table.staff { font-size: .6rem; }
+  .staff th { white-space: normal; line-height: 1.15; vertical-align: bottom; padding: 3px 3px; }
+  .staff td { white-space: nowrap; padding: 2px 3px; }
+  tr.off td { color: var(--muted); }
+  @media (max-width: 900px) { .lower { grid-template-columns: 1fr; } }
   @media (max-width: 900px) { #board { grid-template-columns: 1fr; } section.metric + section.metric { border-left: 0; } }
   @media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+
+  /* ---- Tema Magelang + logo ---- */
+  :root { --candi: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%201200%20220%22%20preserveAspectRatio=%22xMidYMax%20slice%22%3E%3Ccircle%20cx=%22930%22%20cy=%22105%22%20r=%2252%22%20fill=%22%23ffd27a%22%20opacity=%22.85%22/%3E%3Cpath%20d=%22M0%20220V158Q140%20118%20300%20156T620%20150T900%20160T1200%20138V220Z%22%20fill=%22%232f5d50%22%20opacity=%22.55%22/%3E%3Cpath%20d=%22M0%20220V182Q200%20150%20420%20184T820%20178T1200%20168V220Z%22%20fill=%22%231f4037%22%20opacity=%22.75%22/%3E%3Crect%20x=%22490.0%22%20y=%22196%22%20width=%22460%22%20height=%2224%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M499.0%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M527.8%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M556.6%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M585.4%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M614.2%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M643.0%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M671.8%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M700.6%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M729.4%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M758.2%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M787.0%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M815.8%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M844.6%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M873.4%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M902.2%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M931.0%20196q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22522.0%22%20y=%22176%22%20width=%22396%22%20height=%2220%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M531.0%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M559.3%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M587.6%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M615.9%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M644.2%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M672.5%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M700.8%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M729.2%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M757.5%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M785.8%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M814.1%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M842.4%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M870.7%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M899.0%20176q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22554.0%22%20y=%22158%22%20width=%22332%22%20height=%2218%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M563.0%20158q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M593.4%20158q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M623.8%20158q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M654.2%20158q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M684.6%20158q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M715.0%20158q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M745.4%20158q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M775.8%20158q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M806.2%20158q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M836.6%20158q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M867.0%20158q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22586.0%22%20y=%22142%22%20width=%22268%22%20height=%2216%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M595.0%20142q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M625.0%20142q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M655.0%20142q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M685.0%20142q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M715.0%20142q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M745.0%20142q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M775.0%20142q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M805.0%20142q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M835.0%20142q5%20-9%2010%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22706%22%20y=%22142%22%20width=%2228%22%20height=%2278%22%20fill=%22%236b4a36%22%20opacity=%22.8%22/%3E%3Crect%20x=%22620.0%22%20y=%22128%22%20width=%22200%22%20height=%2214%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M628.0%20128a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22635.0%22%20y=%22114%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M656.0%20128a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22663.0%22%20y=%22114%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M684.0%20128a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22691.0%22%20y=%22114%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M712.0%20128a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22719.0%22%20y=%22114%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M740.0%20128a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22747.0%22%20y=%22114%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M768.0%20128a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22775.0%22%20y=%22114%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M796.0%20128a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22803.0%22%20y=%22114%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22647.0%22%20y=%22115%22%20width=%22146%22%20height=%2213%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M655.0%20115a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22662.0%22%20y=%22101%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M683.5%20115a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22690.5%22%20y=%22101%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M712.0%20115a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22719.0%22%20y=%22101%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M740.5%20115a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22747.5%22%20y=%22101%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M769.0%20115a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22776.0%22%20y=%22101%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22671.0%22%20y=%22103%22%20width=%2298%22%20height=%2212%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M679.0%20103a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22686.0%22%20y=%2289%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M712.0%20103a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22719.0%22%20y=%2289%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M745.0%20103a8%2010%200%200%201%2016%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22752.0%22%20y=%2289%22%20width=%222%22%20height=%225%22%20fill=%22%232b1d16%22/%3E%3Cpath%20d=%22M698%20103a22%2026%200%200%201%2044%200z%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22718%22%20y=%2258%22%20width=%224%22%20height=%2222%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%22713%22%20y=%2268%22%20width=%2214%22%20height=%223%22%20fill=%22%232b1d16%22/%3E%3Crect%20x=%2280%22%20y=%22170%22%20width=%223%22%20height=%2230%22%20fill=%22%231a2e27%22/%3E%3Ccircle%20cx=%2281.5%22%20cy=%22166%22%20r=%2216%22%20fill=%22%231a2e27%22/%3E%3Crect%20x=%22170%22%20y=%22170%22%20width=%223%22%20height=%2230%22%20fill=%22%231a2e27%22/%3E%3Ccircle%20cx=%22171.5%22%20cy=%22166%22%20r=%2216%22%20fill=%22%231a2e27%22/%3E%3Crect%20x=%221010%22%20y=%22170%22%20width=%223%22%20height=%2230%22%20fill=%22%231a2e27%22/%3E%3Ccircle%20cx=%221011.5%22%20cy=%22166%22%20r=%2216%22%20fill=%22%231a2e27%22/%3E%3Crect%20x=%221100%22%20y=%22170%22%20width=%223%22%20height=%2230%22%20fill=%22%231a2e27%22/%3E%3Ccircle%20cx=%221101.5%22%20cy=%22166%22%20r=%2216%22%20fill=%22%231a2e27%22/%3E%3Crect%20x=%221170%22%20y=%22170%22%20width=%223%22%20height=%2230%22%20fill=%22%231a2e27%22/%3E%3Ccircle%20cx=%221171.5%22%20cy=%22166%22%20r=%2216%22%20fill=%22%231a2e27%22/%3E%3C/svg%3E"); }
+  body { position: relative; }
+  body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: var(--candi) center bottom / 100% auto no-repeat; opacity: .3; }
+  main { position: relative; z-index: 1; }
+  header { position: relative; overflow: hidden; border-radius: var(--radius); padding: 14px 20px; min-height: 120px;
+    background: linear-gradient(180deg, #14213d 0%, #7a3e4d 55%, #e07a5f 100%); color: #fff; }
+  header::before { content: ""; position: absolute; inset: 0; background: var(--candi) right bottom / auto 125% no-repeat; pointer-events: none; }
+  header > div { position: relative; padding-right: 170px; }
+  header h1 { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.45); }
+  header .date { color: rgba(255,255,255,.92); text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+  .logo { position: absolute; z-index: 2; top: 10px; right: 14px; height: 36px; width: auto; padding: 3px 10px;
+    background: #fff; border-radius: 9px; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  @media (max-width: 600px) { header > div { padding-right: 0; padding-top: 44px; } .logo { height: 30px; } }
+
+  /* ---- Header: judul tengah, tanggal + jam ---- */
+  header > div { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 2px; }
+  .center-title { position: absolute; z-index: 1; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; white-space: nowrap;
+    font-size: clamp(1.1rem, 2.8vw, 2rem); font-weight: 800; letter-spacing: -0.01em; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+  #date { font-variant-numeric: tabular-nums; }
+  @media (max-width: 900px) { .center-title { position: static; transform: none; margin: 4px 0 0; padding-top: 40px; } header > div { padding-top: 0 !important; } }
+  .logo { height: 40px; }
+  /* ---- Sales by Departemen: teks mengikuti tinggi slide (--sh) agar pas ---- */
+  #dept-panel .slide { gap: calc(var(--sh) * .03); padding: 4px 10px; }
+  #dept-panel .s-main { gap: calc(var(--sh) * .035); }
+  #dept-panel .s-title { font-size: clamp(.95rem, calc(var(--sh) * .075), 1.9rem); gap: 6px; line-height: 1.15; }
+  #dept-panel .s-title.mid { font-size: clamp(.9rem, calc(var(--sh) * .066), 1.7rem); }
+  #dept-panel .s-title.long { font-size: clamp(.85rem, min(calc(var(--sh) * .052), 1.9vw), 1.4rem); }
+  #dept-panel .s-title .code { font-size: .75em; }
+  #dept-panel .sbar { height: clamp(6px, calc(var(--sh) * .03), 12px); }
+  #dept-panel .sgrid, #dept-panel .slide.hasimg .sgrid { grid-template-columns: repeat(2, 1fr); gap: calc(var(--sh) * .02) 14px; }
+  #dept-panel .m .l, #dept-panel .slide.hasimg .m .l { font-size: clamp(.7rem, calc(var(--sh) * .043), 1rem); }
+  #dept-panel .m .v, #dept-panel .slide.hasimg .m .v { font-size: clamp(.9rem, min(calc(var(--sh) * .07), 2.4vw), 1.8rem); }
+  #dept-panel .photo { width: 32%; }
 </style>
 </head>
 <body>
 <main>
   <header>
+    <img class="logo" id="logo" alt="Informa" referrerpolicy="no-referrer" src="https://drive.google.com/thumbnail?id=1WopBjz6XtiaJGxoxSw7hV5brZEQTyPe_&sz=w400" data-fb="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20150%2040%22%3E%3Ctext%20x=%2275%22%20y=%2229%22%20text-anchor=%22middle%22%20font-family=%22Arial%20Black,Arial,Helvetica,sans-serif%22%20font-weight=%22900%22%20font-size=%2231%22%20letter-spacing=%22-1%22%20fill=%22%23e2231a%22%3Einforma%3C/text%3E%3C/svg%3E" onerror="this.onerror=null;this.src=this.dataset.fb">
+    <div class="center-title">Informa Tidar Magelang</div>
     <div>
       <h1>Dashboard Penjualan Harian</h1>
       <div class="date" id="date"></div>
@@ -76,14 +172,43 @@
   <div class="panel" id="board"></div>
 
   <!-- Area kosong untuk data tambahan di bawah ringkasan -->
-  <div id="extra"></div>
+  <div id="extra" class="lower">
+    <section class="deptwrap" id="dept-panel" aria-labelledby="dept-title">
+      <div class="dept-head">
+        <div><h2 id="dept-title">Sales by Departemen</h2><div class="sub" id="dept-unit"></div><div class="sub" id="dept-sync" role="status"></div></div>
+        <div class="hbtn">
+          <div class="ctl"><button class="ic" id="dept-prev" type="button" aria-label="Data sebelumnya">&#9650;</button><span class="sub" id="dept-count"></span><button class="ic" id="dept-next" type="button" aria-label="Data berikutnya">&#9660;</button></div>
+          <button class="alt" id="dept-mode" type="button">Tampilkan tabel</button>
+          <button id="unit" type="button">Angka penuh</button>
+        </div>
+      </div>
+      <div class="vp" id="dept-vp" role="group" aria-label="Sales by Departemen, satu per satu"><div class="track" id="dept-track"></div></div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Departemen</th><th>Target</th><th>H-1</th><th>Hari ini</th><th>% Hari ini</th><th>MTD</th><th>% MTD</th><th>-/+ %</th><th>-/+ Nilai</th></tr></thead>
+          <tbody id="dept-body"></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="deptwrap" id="staff-panel" aria-labelledby="staff-title">
+      <div class="dept-head">
+        <div><h2 id="staff-title">Sales by SMT</h2><div class="sub" id="staff-unit"></div><div class="sub" id="staff-sync" role="status"></div></div>
+        <div class="hbtn">
+          <div class="ctl"><button class="ic" id="staff-prev" type="button" aria-label="Data sebelumnya">&#9650;</button><span class="sub" id="staff-count"></span><button class="ic" id="staff-next" type="button" aria-label="Data berikutnya">&#9660;</button></div>
+          <button class="alt" id="staff-mode" type="button">Tampilkan tabel</button>
+        </div>
+      </div>
+      <div class="vp" id="staff-vp" role="group" aria-label="Sales by SMT, satu per satu"><div class="track" id="staff-track"></div></div>
+      <div class="scroll">
+        <table class="staff">
+          <thead><tr><th>NIP</th><th>Nama</th><th>Shift</th><th title="Target hari ini">Target</th><th title="Target FP">T. FP</th><th title="Target Comser">T. Comser</th><th title="Sales hari ini">Sales</th><th title="FP hari ini">FP</th><th title="Produktivitas hari ini">Prod.</th><th title="Conversion rate FP">CR FP</th><th title="Comser hari ini">Comser</th></tr></thead>
+          <tbody id="staff-body"></tbody>
+        </table>
+      </div>
+    </section>
+    <!-- Bagian berikutnya bisa ditambahkan di bawah baris ini -->
+  </div>
 
-  <details>
-    <summary>Perbarui data dari spreadsheet</summary>
-    <p class="label" style="margin:10px 0 0">Salin dua baris dari spreadsheet (judul kolom + nilai), tempel di sini.</p>
-    <textarea id="paste" spellcheck="false" aria-label="Data spreadsheet"></textarea>
-    <button id="apply" type="button">Tampilkan</button><span class="msg" id="msg" role="status"></span>
-  </details>
 </main>
 
 <script>
@@ -167,25 +292,20 @@
     return out;
   }
 
-  document.getElementById("apply").addEventListener("click", function () {
-    var msg = document.getElementById("msg");
-    try {
-      var parsed = parsePaste(document.getElementById("paste").value);
-      Object.keys(parsed).forEach(function (k) { DATA[k] = parsed[k]; });
-      render();
-      msg.textContent = "Data diperbarui.";
-    } catch (e) { msg.textContent = e.message; }
-  });
-
-  document.getElementById("date").textContent =
-    new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  function tickClock() {
+    var d = new Date(), o = { timeZone: "Asia/Jakarta" };
+    var tgl = d.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+    var jam = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Jakarta" }).replace(/\./g, ":");
+    document.getElementById("date").textContent = tgl + " \u00b7 " + jam + " WIB";
+  }
+  tickClock(); setInterval(tickClock, 1000);
   render();
 
   // ---- Sambungan ke Google Sheets ----
   // Tempel tautan CSV hasil "Terbitkan ke web" di antara tanda kutip.
   // Contoh: "https://docs.google.com/spreadsheets/d/e/XXXX/pub?gid=1234925789&single=true&output=csv"
   var SHEET_CSV_URL = "";
-  var REFRESH_MS = 5 * 60 * 1000;
+  var REFRESH_MS = 10 * 60 * 1000; // data dibaca ulang dari Sheets tiap 10 menit
 
   function parseCsv(t) {
     var rows = [], row = [], f = "", q = false, i, c;
@@ -226,6 +346,382 @@
   }
 
   if (SHEET_CSV_URL) { setSync("Memuat data..."); loadSheet(); setInterval(loadSheet, REFRESH_MS); }
+
+  // ---- Tabel departemen ----
+  // Tempel tautan CSV sheet DEPT (Terbitkan ke web, pilih sheet DEPT, format CSV).
+  var DEPT_CSV_URL = "";
+  var fullNumbers = false;
+
+  // Kolom: kode, nama, target, sales H-1, sales hari ini, % hari ini, sales MTD, % MTD, -/+ %, -/+ nilai
+  var DEPT = [
+    ["BA", "Sofa & Chair", 316100000, 32876577, 13959640, 4.42, 46836217, 14.82, -2.18, -6900783],
+    ["BB", "Table & Cabinet", 206500000, 16837928, 2255856, 1.09, 19093784, 9.25, -7.75, -16011216],
+    ["BC", "Home Classic", 219700000, 28285676, 0, 0, 28285676, 12.87, -4.13, -9063324],
+    ["BK", "Home Decore", 104200000, 7882613, 1865405, 1.79, 9748018, 9.36, -7.64, -7965982],
+    ["BL", "Home Textile", 90800000, 5603514, 3048649, 3.36, 8652163, 9.53, -7.47, -6783837],
+    ["BD", "Dining", 142700000, 9861261, 1997297, 1.40, 11858558, 8.31, -8.69, -12400442],
+    ["BE", "Kitchen", 38100000, 13075676, 2252252, 5.91, 15327928, 40.23, 23.23, 8850928],
+    ["BM", "Home Organizer", 57800000, 4639640, 2564865, 4.44, 7204505, 12.46, -4.54, -2621495],
+    ["BN", "Homeware", 115000000, 7433784, 4492342, 3.91, 11926126, 10.37, -6.63, -7623874],
+    ["DA", "KELS - Major Domestic Appliances", 9200000, 2161261, 0, 0, 2161261, 23.49, 6.49, 597261],
+    ["DB", "KELS - Small Domestic Appliances", 21400000, 5251351, 1005405, 4.70, 6256756, 29.24, 12.24, 2618756],
+    ["DC", "KELS - Health Care", 39500000, 0, 674775, 1.71, 674775, 1.71, -15.29, -6040225],
+    ["DD", "KELS - Beauty Care", 600000, 539640, 0, 0, 539640, 89.94, 72.94, 437640],
+    ["BH", "Bathroom", 3800000, 1620180, 0, 0, 1620180, 42.64, 25.64, 974180],
+    ["BF", "Bedroom", 358800000, 50385225, 12433739, 3.47, 62818964, 17.51, 0.51, 1822964],
+    ["BG", "Matrass", 274900000, 16304955, -2185135, -0.79, 14119820, 5.14, -11.86, -32613180],
+    ["BI", "Kids Space", 107800000, 6818919, 3035586, 2.82, 9854505, 9.14, -7.86, -8471495],
+    ["BJ", "Textile Bedding", 129100000, 5546667, 4993243, 3.87, 10539910, 8.16, -8.84, -11407090],
+    ["BP", "Office", 301200000, 12891081, 5500000, 1.83, 18391081, 6.11, -10.89, -32812919],
+    ["BQ", "Office Seating", 127700000, 7742342, 2447748, 1.92, 10190090, 7.98, -9.02, -11518910],
+    ["BR", "Comercial & Bussiness", 455600000, 12240541, 6387387, 1.40, 18627928, 4.09, -12.91, -58824072]
+  ];
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  var mf = new Intl.NumberFormat("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  function money(n) { return fullNumbers ? nf.format(Math.round(n)) : mf.format(n / 1e6); }
+  function pcent(n) { return pf.format(n) + "%"; }
+  function signPct(n) { return (n > 0 ? "+" : "") + pf.format(n) + "%"; }
+  function signMoney(n) { return (n > 0 ? "+" : "") + money(n); }
+  function cls(n) { return n < 0 ? "neg" : (n > 0 ? "pos" : ""); }
+
+  function renderDept() {
+    var t = [0, 0, 0, 0, 0], rows = "";
+    DEPT.forEach(function (r) {
+      t[0] += r[2]; t[1] += r[3]; t[2] += r[4]; t[3] += r[6]; t[4] += r[9];
+      rows += '<tr><td><span class="code">' + esc(r[0]) + '</span>' + esc(r[1]) + '</td><td>' + money(r[2]) + '</td><td>' + money(r[3]) +
+        '</td><td>' + money(r[4]) + '</td><td>' + pcent(r[5]) + '</td><td>' + money(r[6]) + '</td><td>' + pcent(r[7]) +
+        '</td><td class="' + cls(r[8]) + '">' + signPct(r[8]) + '</td><td class="' + cls(r[9]) + '">' + signMoney(r[9]) + '</td></tr>';
+    });
+    if (DEPT.length) {
+      // target % berjalan diambil dari baris pertama: % MTD dikurangi selisih %
+      var expected = DEPT[0][7] - DEPT[0][8];
+      var pT = t[0] ? t[2] / t[0] * 100 : 0, pM = t[0] ? t[3] / t[0] * 100 : 0;
+      rows += '<tr class="total"><td>Total</td><td>' + money(t[0]) + '</td><td>' + money(t[1]) + '</td><td>' + money(t[2]) + '</td><td>' + pcent(pT) +
+        '</td><td>' + money(t[3]) + '</td><td>' + pcent(pM) + '</td><td class="' + cls(pM - expected) + '">' + signPct(pM - expected) +
+        '</td><td class="' + cls(t[4]) + '">' + signMoney(t[4]) + '</td></tr>';
+    }
+    document.getElementById("dept-body").innerHTML = rows;
+    document.getElementById("dept-unit").textContent = fullNumbers ? "Angka dalam Rupiah" : "Angka dalam Rp juta";
+    document.getElementById("unit").textContent = fullNumbers ? "Rp juta" : "Angka penuh";
+    if (window.cDept) cDept.set(deptSlides());
+  }
+
+  function parseDept(rows) {
+    var out = [];
+    rows.forEach(function (c, i) {
+      var code = (c[0] || "").trim();
+      if (!code || (i === 0 && /code/i.test(code))) return;
+      var n = function (k) { var r = num(c[k] == null ? "" : c[k]); return r ? r.n : 0; };
+      out.push([code, (c[1] || "").trim(), n(2), n(3), n(4), n(5), n(6), n(7), n(8), n(9)]);
+    });
+    if (!out.length) throw new Error("Tabel departemen kosong.");
+    return out;
+  }
+
+  function loadDept() {
+    if (!DEPT_CSV_URL) return;
+    fetch(DEPT_CSV_URL, { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+      .then(function (t) {
+        DEPT = parseDept(parseCsv(t).filter(function (r) { return r.join("").trim(); }));
+        renderDept();
+        document.getElementById("dept-sync").textContent = "Data dari Google Sheets, " + new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+      })
+      .catch(function (e) { document.getElementById("dept-sync").textContent = "Gagal membaca sheet DEPT (" + e.message + "). Menampilkan data terakhir."; });
+  }
+
+  document.getElementById("unit").addEventListener("click", function () { fullNumbers = !fullNumbers; renderDept(); renderStaff(); });
+  renderDept();
+  if (DEPT_CSV_URL) { loadDept(); setInterval(loadDept, REFRESH_MS); }
+
+  // ---- Tabel sales per 2 jam ----
+  // Tempel tautan CSV sheet "SALES PER 2 JAM" (Terbitkan ke web, pilih sheet itu, format CSV).
+  var STAFF_CSV_URL = "";
+
+  // Kolom: NIP, nama, shift, target hari ini, target FP, target Comser, sales hari ini, FP, prod., CR FP (%), Comser
+  var STAFF = [
+    ["168804", "AGUS", "PAGI", 15312000, 2, 56040, 8574368, 1, 7, 14.29, 0],
+    ["168809", "AZIZ", "OFF", 0, 0, 0, 0, 0, 0, 0, 0],
+    ["169169", "ZAKY", "SIANG", 15312000, 2, 56040, 3131532, 1, 2, 50, 0],
+    ["169378", "YOHANES", "OFF", 0, 0, 0, 482252, 0, 0, 0, 0],
+    ["171212", "ACHMAD", "PAGI", 15312000, 2, 56040, 4952070, 1, 1, 100, 0],
+    ["171508", "RIKA", "OFF", 0, 0, 0, 7794324, 1, 5, 20, 0],
+    ["172577", "EVI", "OFF", 0, 0, 0, 6527477, 0, 4, 0, 0],
+    ["176193", "CANDRA", "OFF", 0, 0, 0, 6880807, 1, 8, 12.5, 0],
+    ["176195", "ZAHRO", "PAGI", 15312000, 2, 56040, 4081980, 1, 2, 50, 0],
+    ["180855", "NIA", "PAGI", 15312000, 2, 56040, 0, 0, 0, 0, 0],
+    ["184270", "DEWI", "OFF", 0, 0, 0, 11962972, 3, 6, 50, 0],
+    ["190761", "CAHYANI", "SIANG", 15312000, 2, 56040, 0, 0, 0, 0, 0],
+    ["192294", "CHINTYA", "PAGI", 15312000, 2, 56040, 0, 0, 0, 0, 0],
+    ["192295", "DEVA", "OFF", 0, 0, 0, 0, 0, 0, 0, 0],
+    ["192918", "SUHARI", "SIANG", 15312000, 2, 56040, 5109008, 0, 3, 0, 0],
+    ["193683", "NADIA", "PAGI", 15312000, 2, 56040, 0, 0, 0, 0, 0],
+    ["195936", "TINGKAS", "SIANG", 15312000, 2, 56040, 3242250, 1, 4, 25, 0]
+  ];
+
+  function renderStaff() {
+    var t = [0, 0, 0, 0, 0, 0, 0, 0], rows = "";
+    STAFF.forEach(function (r) {
+      t[0] += r[3]; t[1] += r[4]; t[2] += r[5]; t[3] += r[6]; t[4] += r[7]; t[5] += r[8]; t[6] += r[10];
+      rows += '<tr' + (String(r[2]).toUpperCase() === "OFF" ? ' class="off"' : '') + '><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td><td>' + esc(r[2]) +
+        '</td><td>' + money(r[3]) + '</td><td>' + nf.format(r[4]) + '</td><td>' + nf.format(r[5]) + '</td><td>' + money(r[6]) +
+        '</td><td>' + nf.format(r[7]) + '</td><td>' + nf.format(r[8]) + '</td><td>' + pcent(r[9]) + '</td><td>' + nf.format(r[10]) + '</td></tr>';
+    });
+    if (STAFF.length) {
+      var cr = t[5] ? t[4] / t[5] * 100 : 0;
+      rows += '<tr class="total"><td colspan="3">Total</td><td>' + money(t[0]) + '</td><td>' + nf.format(t[1]) + '</td><td>' + nf.format(t[2]) +
+        '</td><td>' + money(t[3]) + '</td><td>' + nf.format(t[4]) + '</td><td>' + nf.format(t[5]) + '</td><td>' + pcent(cr) + '</td><td>' + nf.format(t[6]) + '</td></tr>';
+    }
+    document.getElementById("staff-body").innerHTML = rows;
+    document.getElementById("staff-unit").textContent = fullNumbers ? "Target dan sales dalam Rupiah" : "Target dan sales dalam Rp juta";
+    if (window.cStaff) cStaff.set(staffSlides());
+  }
+
+  function parseStaff(rows) {
+    var out = [];
+    rows.forEach(function (c, i) {
+      var nip = (c[0] || "").trim();
+      if (!nip || (i === 0 && /nip/i.test(nip))) return;
+      var n = function (k) { var r = num(c[k] == null ? "" : c[k]); return r ? r.n : 0; };
+      out.push([nip, (c[1] || "").trim(), (c[2] || "").trim(), n(3), n(4), n(5), n(6), n(7), n(8), n(9), n(10)]);
+    });
+    if (!out.length) throw new Error("Tabel sales per 2 jam kosong.");
+    return out;
+  }
+
+  function loadStaff() {
+    if (!STAFF_CSV_URL) return;
+    fetch(STAFF_CSV_URL, { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+      .then(function (t) {
+        STAFF = parseStaff(parseCsv(t).filter(function (r) { return r.join("").trim(); }));
+        renderStaff();
+        document.getElementById("staff-sync").textContent = "Data dari Google Sheets, " + new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+      })
+      .catch(function (e) { document.getElementById("staff-sync").textContent = "Gagal membaca sheet SALES PER 2 JAM (" + e.message + "). Menampilkan data terakhir."; });
+  }
+
+  renderStaff();
+  if (STAFF_CSV_URL) { loadStaff(); setInterval(loadStaff, REFRESH_MS); }
+
+  // ---- Tampilan satu per satu (geser ke atas) ----
+  var SLIDE_MS = 5000; // jeda antar data, dalam milidetik
+
+  function full(n) { return nf.format(Math.round(n)); }
+  function sfull(n) { return (n > 0 ? "+" : "") + full(n); }
+  function mt(l, v, c) { return '<div class="m"><div class="l">' + l + '</div><div class="v' + (c ? " " + c : "") + '">' + v + '</div></div>'; }
+  // Foto departemen: kode -> ID atau tautan file Google Drive (file harus dibagikan "Siapa saja yang memiliki link").
+  var PHOTOS = {
+    BA: "1BLcP8I23ARq8YbZ-Ia9rWoEeIpunS6lC",
+    BB: "1N-8GqdQ9IV4IURV8in6KJlzP-t8bqxnG",
+    BC: "1IBXII83AE01-VrhyDSwYPMS6yg__x-6P",
+    BK: "1yYtYy06VTTfzkCcnLjAt8Q7VSI8jUWcb",
+    BL: "1A57cIkWFI4jDMnrPwuMSs3rXgw7iMqwO",
+    BO: "1IBXII83AE01-VrhyDSwYPMS6yg__x-6P",
+    FA: "1UxwTm7GPyAcjXCEfTv28eTzirStaXHQc",
+    BD: "1wlDIyyjFo4CHYrMxNRJq--SLsLdzG8Q1",
+    BE: "1hEpbYRgopauLuNWejqqOE_eM915y2tU-",
+    BM: "1dfZBuU-I84NdurQ11cnDnDQMVo5-MQmY",
+    BN: "1o6ecGNLtqSoBUw8QteicKePTasm3OqLY",
+    DA: "1xAfMxJiHuGksG_JnMVXiZ7l3cYwjU3Zc",
+    DB: "1xAfMxJiHuGksG_JnMVXiZ7l3cYwjU3Zc",
+    DC: "1xAfMxJiHuGksG_JnMVXiZ7l3cYwjU3Zc",
+    DD: "1xAfMxJiHuGksG_JnMVXiZ7l3cYwjU3Zc",
+    BH: "1hEpbYRgopauLuNWejqqOE_eM915y2tU-",
+    BF: "1bYWBIGATredCwvhWv45mIOQ2nJub6AP1",
+    BG: "1UxwTm7GPyAcjXCEfTv28eTzirStaXHQc",
+    BI: "1dVfZKBmmg0FiNM4woUXa4-rAHVM3FMle",
+    BJ: "1f-NbnDMRLLRkK62kHlpJizYsvs99Mn4W",
+    BP: "1TBElzwp-eWdcZ-MMlgE6HvCxiWqjsU5W",
+    BQ: "1TBElzwp-eWdcZ-MMlgE6HvCxiWqjsU5W",
+    BR: "1I779nxZXYhqTTfn5G6sQS2Y0ZCZWOjA_"
+  };
+  // Tempel tautan CSV sheet "Foto dept" (Terbitkan ke web, format CSV) agar foto ikut berubah dari spreadsheet.
+  var PHOTO_CSV_URL = "";
+
+  function driveId(v) {
+    var m = /\/d\/([\w-]+)/.exec(v) || /[?&]id=([\w-]+)/.exec(v);
+    return m ? m[1] : (/^[\w-]{20,}$/.test(v) ? v : "");
+  }
+  function photoFor(code) {
+    var v = PHOTOS[code], id = v ? driveId(v) : "";
+    return id ? "https://drive.google.com/thumbnail?id=" + id + "&sz=w800" : "";
+  }
+  function loadPhotos() {
+    if (!PHOTO_CSV_URL) return;
+    fetch(PHOTO_CSV_URL, { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+      .then(function (t) {
+        parseCsv(t).forEach(function (c, i) {
+          var code = (c[0] || "").trim(), link = (c[2] || "").trim();
+          if (!code || (i === 0 && /code/i.test(code)) || !link) return;
+          PHOTOS[code] = link;
+        });
+        renderDept();
+      })
+      .catch(function () { /* foto yang tertanam tetap dipakai */ });
+  }
+
+  // Foto SMT: NIP -> ID atau tautan file Google Drive (file harus dibagikan "Siapa saja yang memiliki link").
+  var STAFF_PHOTOS = {
+    "168804": "1pn8hlg-L7Rtk__bVRZd1YbglEpKOiwUo",
+    "168809": "1IP8qD5HHLQaP2kM3Vm8DC29EHg2b1sBw",
+    "169169": "1fiHYeAFm8qV2iqqtz4GBr6HxzxUB9pG3",
+    "169378": "1MnpIMCEKpLmotKtQT_nPmN0LGPek5BI1",
+    "171212": "17BkZrsGyPIpzOwbf7Z_1G5oObZA-_PYs",
+    "171508": "1bpR6ZQRKrvCyuT2c55akZsMPK2ZK45fo",
+    "172577": "1uULkl9GVUaGX74yvKGabV5EJDiy6uoWK",
+    "176193": "1sxpmF7vpYA_DdDErD87YPzA5ZXkid8gH",
+    "176195": "1mrvgK6fFpVynKVoKKXxfCiE1l6br7lVG",
+    "180855": "1w5qrqICBZC1XxniMJ_4owcLxPR1N7ER9",
+    "184270": "1D1zLk94wQsgg8qhCth4R-6DkReYRJFq2",
+    "190761": "1NLVQOSGGSZoC8QK60ATdVbddf8VWZOdK",
+    "192294": "1QvJ2jXI1Zxcu8NdEioi_geM9lfCjE1IQ",
+    "192295": "1jMgmRTiMlyQd0PELkLLa2QXidv7BrjiG",
+    "192918": "19tT5VCR3cUS8uIpDjT_7UTnP_jkIFXOQ",
+    "193683": "1_Zwgk8mDw_pTBIV2KFXpBzyYRINf4K4f",
+    "195936": "1UCNNyXfH9oeVagoSspYH00mUtXN82Ndx"
+  };
+  // Opsional: tempel tautan CSV sheet "FOTO SMT" (Terbitkan ke web, format CSV; kolom NIP, NAMA, FOTO SMT).
+  var STAFF_PHOTO_CSV_URL = "";
+  function staffPhotoFor(nip) {
+    var v = STAFF_PHOTOS[nip], id = v ? driveId(v) : "";
+    return id ? "https://drive.google.com/thumbnail?id=" + id + "&sz=w800" : "";
+  }
+  function loadStaffPhotos() {
+    if (!STAFF_PHOTO_CSV_URL) return;
+    fetch(STAFF_PHOTO_CSV_URL, { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+      .then(function (t) {
+        parseCsv(t).forEach(function (c, i) {
+          var nip = (c[0] || "").trim(), link = (c[2] || "").trim();
+          if (!nip || (i === 0 && /nip/i.test(nip)) || !link) return;
+          STAFF_PHOTOS[nip] = link;
+        });
+        renderStaff();
+      })
+      .catch(function () { /* foto yang tertanam tetap dipakai */ });
+  }
+
+  function slideHtml(title, tag, barPct, grid, img) {
+    var bar = barPct == null ? "" : '<div class="bar sbar"><i style="width:' + Math.max(0, Math.min(100, barPct)) + '%"></i></div>';
+    var head = '<div class="s-title' + (function (n) { return n > 28 ? " long" : n > 18 ? " mid" : ""; })(title.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").length) + '">' + title + (tag ? '<span class="tag">' + esc(tag) + '</span>' : "") + '</div>';
+    var main = head + bar + '<div class="sgrid">' + grid + '</div>';
+    if (img) return '<div class="slide hasimg" style="--c:var(--sales)"><div class="s-main">' + main + '</div><img class="photo" src="' + img + '" alt="" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'"></div>';
+    return '<div class="slide" style="--c:var(--sales)">' + main + '</div>';
+  }
+
+  function deptSlides() {
+    var out = [], t = [0, 0, 0, 0, 0];
+    DEPT.forEach(function (r) {
+      t[0] += r[2]; t[1] += r[3]; t[2] += r[4]; t[3] += r[6]; t[4] += r[9];
+      out.push(slideHtml('<span class="code">' + esc(r[0]) + '</span>' + esc(r[1]), "", r[7],
+        mt("Target", full(r[2])) + mt("Sales H-1", full(r[3])) + mt("Sales hari ini", full(r[4])) + mt("% hari ini", pcent(r[5])) +
+        mt("Sales MTD", full(r[6])) + mt("% MTD", pcent(r[7])) + mt("-/+ %", signPct(r[8]), cls(r[8])) + mt("-/+ nilai", sfull(r[9]), cls(r[9])), photoFor(r[0])));
+    });
+    if (DEPT.length) {
+      var expected = DEPT[0][7] - DEPT[0][8];
+      var pT = t[0] ? t[2] / t[0] * 100 : 0, pM = t[0] ? t[3] / t[0] * 100 : 0;
+      out.push(slideHtml("Total", "", pM,
+        mt("Target", full(t[0])) + mt("Sales H-1", full(t[1])) + mt("Sales hari ini", full(t[2])) + mt("% hari ini", pcent(pT)) +
+        mt("Sales MTD", full(t[3])) + mt("% MTD", pcent(pM)) + mt("-/+ %", signPct(pM - expected), cls(pM - expected)) + mt("-/+ nilai", sfull(t[4]), cls(t[4]))));
+    }
+    return out;
+  }
+
+  function staffSlides() {
+    var out = [], t = [0, 0, 0, 0, 0, 0, 0];
+    STAFF.forEach(function (r) {
+      t[0] += r[3]; t[1] += r[4]; t[2] += r[5]; t[3] += r[6]; t[4] += r[7]; t[5] += r[8]; t[6] += r[10];
+      out.push(slideHtml(esc(r[1]) + ' <span class="code">' + esc(r[0]) + '</span>', r[2], null,
+        mt("Target", full(r[3])) + mt("Sales hari ini", full(r[6])) + mt("Target FP", nf.format(r[4])) + mt("FP", nf.format(r[7])) +
+        mt("Target Comser", nf.format(r[5])) + mt("Comser", nf.format(r[10])) + mt("Prod.", nf.format(r[8])) + mt("CR FP", pcent(r[9])), staffPhotoFor(r[0])));
+    });
+    if (STAFF.length) {
+      var cr = t[5] ? t[4] / t[5] * 100 : 0;
+      out.push(slideHtml("Total", "", null,
+        mt("Target", full(t[0])) + mt("Sales hari ini", full(t[3])) + mt("Target FP", nf.format(t[1])) + mt("FP", nf.format(t[4])) +
+        mt("Target Comser", nf.format(t[2])) + mt("Comser", nf.format(t[6])) + mt("Prod.", nf.format(t[5])) + mt("CR FP", pcent(cr))));
+    }
+    return out;
+  }
+
+  function makeCarousel(panelId, prefix, ms) {
+    var panel = document.getElementById(panelId), track = document.getElementById(prefix + "-track"),
+        cnt = document.getElementById(prefix + "-count");
+    var vp = document.getElementById(prefix + "-vp");
+    var c = { i: 0, n: 0, timer: null, hold: false };
+    function fit() { if (vp.clientHeight > 0) panel.style.setProperty("--sh", vp.clientHeight + "px"); }
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(vp); else window.addEventListener("resize", fit);
+    c.fit = fit;
+    function pos() { track.style.transform = "translateY(-" + (c.i * 100 / (c.n + 1)) + "%)"; }
+    function label() { cnt.textContent = (c.n ? (c.i % c.n) + 1 : 0) + " / " + c.n; }
+    function snap() { track.classList.add("nt"); pos(); void track.offsetHeight; track.classList.remove("nt"); }
+    c.set = function (slides) {
+      c.n = slides.length;
+      track.innerHTML = slides.concat(slides.slice(0, 1)).join("");
+      if (c.i >= c.n) c.i = 0;
+      snap(); label();
+    };
+    c.go = function (d) {
+      if (!c.n) return;
+      if (c.i === c.n) { c.i = 0; snap(); }
+      if (d < 0 && c.i === 0) { c.i = c.n; snap(); }
+      c.i += d; pos(); label();
+      if (c.i === c.n) setTimeout(function () { if (c.i === c.n) { c.i = 0; snap(); } }, 750);
+    };
+    c.play = function () {
+      clearInterval(c.timer);
+      c.timer = setInterval(function () { if (!c.hold) c.go(1); }, ms);
+    };
+    panel.addEventListener("mouseenter", function () { c.hold = true; });
+    panel.addEventListener("mouseleave", function () { c.hold = false; });
+    panel.addEventListener("focusin", function () { c.hold = true; });
+    panel.addEventListener("focusout", function () { c.hold = false; });
+    document.getElementById(prefix + "-prev").addEventListener("click", function () { c.go(-1); c.play(); });
+    document.getElementById(prefix + "-next").addEventListener("click", function () { c.go(1); c.play(); });
+    var btn = document.getElementById(prefix + "-mode");
+    btn.addEventListener("click", function () {
+      var tbl = panel.classList.toggle("tablemode");
+      btn.textContent = tbl ? "Satu per satu" : "Tampilkan tabel";
+    });
+    return c;
+  }
+
+  window.cDept = makeCarousel("dept-panel", "dept", SLIDE_MS);
+  window.cStaff = makeCarousel("staff-panel", "staff", SLIDE_MS);
+  cDept.set(deptSlides()); cStaff.set(staffSlides());
+  cDept.fit(); cStaff.fit();
+  cDept.play(); cStaff.play();
+  if (PHOTO_CSV_URL) { loadPhotos(); setInterval(loadPhotos, REFRESH_MS); }
+  if (STAFF_PHOTO_CSV_URL) { loadStaffPhotos(); setInterval(loadStaffPhotos, REFRESH_MS); }
+
+  // ---- Auto refresh halaman ----
+  // 1) Cek versi file HTML tiap REFRESH_MS; kalau file di server berubah (mis. setelah update GitHub), halaman reload sendiri.
+  // 2) Reload harian jam 05:00 WIB agar tab yang menyala berhari-hari tetap segar.
+  var pageSig = null;
+  function checkVersion() {
+    if (location.protocol === "file:") return;
+    fetch(location.href.split("#")[0], { method: "HEAD", cache: "no-store" })
+      .then(function (r) {
+        var sig = (r.headers.get("etag") || "") + "|" + (r.headers.get("last-modified") || "") + "|" + (r.headers.get("content-length") || "");
+        if (sig === "||") return;
+        if (pageSig === null) pageSig = sig;
+        else if (sig !== pageSig) location.reload();
+      })
+      .catch(function () { /* offline: coba lagi nanti */ });
+  }
+  function dailyReload() {
+    var p = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
+    // performance.now() > 2 menit: cegah reload berulang di menit yang sama
+    if (p === "05:00" && performance.now() > 120000) location.reload();
+  }
+  checkVersion();
+  setInterval(checkVersion, REFRESH_MS);
+  setInterval(dailyReload, 30000);
 </script>
 </body>
 </html>
