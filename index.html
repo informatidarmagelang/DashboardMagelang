@@ -155,6 +155,10 @@
   #dept-panel .m .l, #dept-panel .slide.hasimg .m .l { font-size: clamp(.7rem, calc(var(--sh) * .043), 1rem); }
   #dept-panel .m .v, #dept-panel .slide.hasimg .m .v { font-size: clamp(.9rem, min(calc(var(--sh) * .07), 2.4vw), 1.8rem); }
   #dept-panel .photo { width: 32%; }
+  /* ---- Sales by SMT: nama lebih kecil ---- */
+  #staff-panel .s-title, #staff-panel .s-title.mid, #staff-panel .s-title.long { font-size: clamp(.95rem, min(calc(var(--sh) * .06), 1.7vw), 1.5rem); line-height: 1.15; gap: 6px; }
+  #staff-panel .s-title .code { font-size: .7em; }
+  #staff-panel .s-title .tag { font-size: .7rem; padding: 1px 8px; }
 </style>
 </head>
 <body>
@@ -349,7 +353,7 @@
 
   // ---- Tabel departemen ----
   // Tempel tautan CSV sheet DEPT (Terbitkan ke web, pilih sheet DEPT, format CSV).
-  var DEPT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRZyp3J22u9hmEdnLLic2TOWr6Hp-W0sfohspdI5gr2xhNsz7DetQdB3dTrh4kejjEz8RyHMnIeL2U/pub?gid=1239217629&single=true&output=csv";
+  var DEPT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRZyp3J22u9hmEdnLLic2TOWr6Hp-W0sfohspdI5gr2xhNsz7DetQdB3dTrh4kejjEz8RyHMnIeL2U/pub?output=csv";
   var fullNumbers = false;
 
   // Kolom: kode, nama, target, sales H-1, sales hari ini, % hari ini, sales MTD, % MTD, -/+ %, -/+ nilai
@@ -439,7 +443,7 @@
 
   // ---- Tabel sales per 2 jam ----
   // Tempel tautan CSV sheet "SALES PER 2 JAM" (Terbitkan ke web, pilih sheet itu, format CSV).
-  var STAFF_CSV_URL = "";
+  var STAFF_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRZyp3J22u9hmEdnLLic2TOWr6Hp-W0sfohspdI5gr2xhNsz7DetQdB3dTrh4kejjEz8RyHMnIeL2U/pub?output=csv";
 
   // Kolom: NIP, nama, shift, target hari ini, target FP, target Comser, sales hari ini, FP, prod., CR FP (%), Comser
   var STAFF = [
@@ -586,7 +590,7 @@
     "195936": "1UCNNyXfH9oeVagoSspYH00mUtXN82Ndx"
   };
   // Opsional: tempel tautan CSV sheet "FOTO SMT" (Terbitkan ke web, format CSV; kolom NIP, NAMA, FOTO SMT).
-  var STAFF_PHOTO_CSV_URL = "";
+  var STAFF_PHOTO_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRZyp3J22u9hmEdnLLic2TOWr6Hp-W0sfohspdI5gr2xhNsz7DetQdB3dTrh4kejjEz8RyHMnIeL2U/pub?output=csv";
   function staffPhotoFor(nip) {
     var v = STAFF_PHOTOS[nip], id = v ? driveId(v) : "";
     return id ? "https://drive.google.com/thumbnail?id=" + id + "&sz=w800" : "";
