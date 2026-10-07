@@ -85,6 +85,13 @@
   .deptwrap.tablemode .vp, .deptwrap.tablemode .ctl { display: none; }
   .vp { overflow: hidden; flex: 1 1 0; min-height: 0; }
   .track { transition: transform 600ms cubic-bezier(.2,.7,.2,1); will-change: transform; }
+  .grp { height: var(--sh); overflow: hidden; }
+  .itrack { display: flex; height: 100%; transition: transform 600ms cubic-bezier(.2,.7,.2,1); will-change: transform; }
+  .itrack.nt { transition: none !important; }
+  .itrack .slide { flex: 1 1 0; min-width: 0; min-height: 0; }
+  @media (prefers-reduced-motion: reduce) { .itrack { transition: none; } }
+  .track.h { display: flex; }
+  .track.h .slide { flex: 1 1 0; min-width: 0; }
   .track.nt { transition: none !important; }
   .slide { height: var(--sh); padding: 8px 10px; display: flex; flex-direction: column; justify-content: center; gap: clamp(6px, 1.2vh, 14px); }
   .s-title { font-size: clamp(1.3rem, 2.6vw, 2.2rem); font-weight: 800; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
@@ -204,7 +211,7 @@
       <div class="dept-head">
         <div><h2 id="staff-title">Sales by SMT</h2><div class="sub" id="staff-unit"></div><div class="sub" id="staff-sync" role="status"></div></div>
         <div class="hbtn">
-          <div class="ctl"><button class="ic" id="staff-prev" type="button" aria-label="Data sebelumnya">&#9650;</button><span class="sub" id="staff-count"></span><button class="ic" id="staff-next" type="button" aria-label="Data berikutnya">&#9660;</button></div>
+          <div class="ctl"><button class="ic" id="staff-prev" type="button" aria-label="Data sebelumnya">&#9664;</button><span class="sub" id="staff-count"></span><button class="ic" id="staff-next" type="button" aria-label="Data berikutnya">&#9654;</button></div>
           <button class="alt" id="staff-mode" type="button">Tampilkan tabel</button>
         </div>
       </div>
@@ -516,8 +523,56 @@
   renderStaff();
   if (STAFF_CSV_URL) { loadStaff(); setInterval(loadStaff, REFRESH_MS); }
 
+  // ---- Sales by SMT: data MTD (sheet "SALES BY MTD") ----
+  // Kolom: NIP, nama, MTD sales, MTD FP, MTD Comser, Furniture, Accs, +/- Furni, +/- Acc
+  var STAFF_MTD_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRZyp3J22u9hmEdnLLic2TOWr6Hp-W0sfohspdI5gr2xhNsz7DetQdB3dTrh4kejjEz8RyHMnIeL2U/pub?gid=32074625&single=true&output=csv";
+  var STAFF_MTD = [
+    ["168804", "AGUS", 19607432, 6, 0, 15645721, 3368468, -164721338, -41723297],
+    ["168809", "AZIZ", 25587027, 5, 0, 21929729, 3147476, -158437330, -41944289],
+    ["169169", "ZAKY", 17997838, 1, 0, 14256758, 3624863, -166110301, -41466902],
+    ["169378", "YOHANES", 17634054, 8, 89189, 13960992, 2913783, -166406067, -42177982],
+    ["171212", "ACHMAD", 57136081, 9, 198198, 49072567, 6810360, -131294492, -38281405],
+    ["171508", "RIKA", 39229640, 5, 252252, 31834414, 6633153, -148532645, -38458612],
+    ["172577", "EVI", 38673153, 7, 0, 31552701, 6485496, -148814358, -38606269],
+    ["176193", "CANDRA", 12079099, 3, 0, 6276397, 5721890, -174090662, -39369875],
+    ["176195", "ZAHRO", 18105135, 6, 0, 11908918, 5689640, -168458141, -39402125],
+    ["180855", "NIA", 88595739, 12, 873873, 79525649, 6782702, -100841410, -38309063],
+    ["184270", "DEWI", 22321351, 7, 0, 15298647, 6414595, -165068412, -38677170],
+    ["190761", "CAHYANI", 8405586, 1, 0, 5502073, 2787298, -174864986, -42304467],
+    ["192294", "CHINTYA", 39246847, 2, 0, 31992343, 6977028, -148374716, -38114737],
+    ["192918", "SUHARI", 27591441, 3, 0, 24317839, 2951981, -156049220, -42139784],
+    ["193683", "NADIA", 22460811, 6, 0, 16409010, 5355495, -163958049, -39736270],
+    ["195936", "TINGKAS", 76564811, 25, 178378, 61719405, 12985315, -118647654, -32106450]
+  ];
+
+  function parseStaffMtd(rows) {
+    var out = [];
+    rows.forEach(function (c, i) {
+      var nip = (c[0] || "").trim();
+      if (!nip || (i === 0 && /nip/i.test(nip))) return;
+      var n = function (k) { var r = num(c[k] == null ? "" : c[k]); return r ? r.n : 0; };
+      out.push([nip, (c[1] || "").trim(), n(2), n(3), n(4), n(5), n(6), n(7), n(8)]);
+    });
+    if (!out.length) throw new Error("Tabel MTD kosong.");
+    return out;
+  }
+
+  function loadStaffMtd() {
+    if (!STAFF_MTD_CSV_URL) return;
+    fetch(STAFF_MTD_CSV_URL, { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+      .then(function (t) {
+        STAFF_MTD = parseStaffMtd(parseCsv(t).filter(function (r) { return r.join("").trim(); }));
+        renderStaff();
+      })
+      .catch(function (e) { document.getElementById("staff-sync").textContent = "Gagal membaca sheet SALES BY MTD (" + e.message + "). Menampilkan data terakhir."; });
+  }
+  if (STAFF_MTD_CSV_URL) { loadStaffMtd(); setInterval(loadStaffMtd, REFRESH_MS); }
+
+
   // ---- Tampilan satu per satu (geser ke atas) ----
   var SLIDE_MS = 5000; // jeda antar data, dalam milidetik
+  var STAFF_SLIDE_MS = 4000; // Sales by SMT: tiap slide (hari ini / MTD) tampil 4 detik
 
   function full(n) { return nf.format(Math.round(n)); }
   function sfull(n) { return (n > 0 ? "+" : "") + full(n); }
@@ -641,36 +696,57 @@
     return out;
   }
 
+  // Satu grup per SMT: [slide hari ini, slide MTD]. Arah geser diatur oleh STAFF_SMT_AXIS.
   function staffSlides() {
-    var out = [], t = [0, 0, 0, 0, 0, 0, 0];
+    var out = [], t = [0, 0, 0, 0, 0, 0, 0], m = [0, 0, 0, 0, 0, 0, 0, 0], mtdBy = {}, anyMtd = false;
+    STAFF_MTD.forEach(function (q) { mtdBy[q[0]] = q; });
     STAFF.forEach(function (r) {
       t[0] += r[3]; t[1] += r[4]; t[2] += r[5]; t[3] += r[6]; t[4] += r[7]; t[5] += r[8]; t[6] += r[10];
-      out.push(slideHtml(esc(r[1]) + ' <span class="code">' + esc(r[0]) + '</span>', r[2], null,
+      var title = esc(r[1]) + ' <span class="code">' + esc(r[0]) + '</span>';
+      var grp = [slideHtml(title, "Hari ini \u00b7 " + r[2], null,
         mt("Target", full(r[3])) + mt("Sales hari ini", full(r[6])) + mt("Target FP", nf.format(r[4])) + mt("FP", nf.format(r[7])) +
-        mt("Target Comser", nf.format(r[5])) + mt("Comser", nf.format(r[10])) + mt("Prod.", nf.format(r[8])) + mt("CR FP", pcent(r[9])), staffPhotoFor(r[0])));
+        mt("Target Comser", nf.format(r[5])) + mt("Comser", nf.format(r[10])) + mt("Prod.", nf.format(r[8])) + mt("CR FP", pcent(r[9])), staffPhotoFor(r[0]))];
+      var q = mtdBy[r[0]];
+      if (q) {
+        anyMtd = true;
+        for (var k = 0; k < 7; k++) m[k] += q[k + 2];
+        grp.push(slideHtml(title, "MTD", null, mtdGrid(q), staffPhotoFor(r[0])));
+      }
+      out.push(grp);
     });
     if (STAFF.length) {
       var cr = t[5] ? t[4] / t[5] * 100 : 0;
-      out.push(slideHtml("Total", "", null,
+      var tot = [slideHtml("Total", "Hari ini", null,
         mt("Target", full(t[0])) + mt("Sales hari ini", full(t[3])) + mt("Target FP", nf.format(t[1])) + mt("FP", nf.format(t[4])) +
-        mt("Target Comser", nf.format(t[2])) + mt("Comser", nf.format(t[6])) + mt("Prod.", nf.format(t[5])) + mt("CR FP", pcent(cr))));
+        mt("Target Comser", nf.format(t[2])) + mt("Comser", nf.format(t[6])) + mt("Prod.", nf.format(t[5])) + mt("CR FP", pcent(cr)))];
+      if (anyMtd) tot.push(slideHtml("Total", "MTD", null, mtdGrid([0, 0, m[0], m[1], m[2], m[3], m[4], m[5], m[6]])));
+      out.push(tot);
     }
     return out;
   }
 
-  function makeCarousel(panelId, prefix, ms) {
+  function mtdGrid(q) {
+    return mt("MTD Sales", full(q[2])) + mt("MTD FP", nf.format(q[3])) + mt("MTD Comser", nf.format(q[4])) +
+      mt("Furniture", full(q[5])) + mt("Accs", full(q[6])) +
+      mt("\u00b1 Furniture", sfull(q[7]), cls(q[7])) + mt("\u00b1 Accs", sfull(q[8]), cls(q[8]));
+  }
+
+  function makeCarousel(panelId, prefix, ms, dir) {
     var panel = document.getElementById(panelId), track = document.getElementById(prefix + "-track"),
         cnt = document.getElementById(prefix + "-count");
     var vp = document.getElementById(prefix + "-vp");
+    var horiz = dir === "h";
+    if (horiz) track.classList.add("h");
     var c = { i: 0, n: 0, timer: null, hold: false };
     function fit() { if (vp.clientHeight > 0) panel.style.setProperty("--sh", vp.clientHeight + "px"); }
     if (window.ResizeObserver) new ResizeObserver(fit).observe(vp); else window.addEventListener("resize", fit);
     c.fit = fit;
-    function pos() { track.style.transform = "translateY(-" + (c.i * 100 / (c.n + 1)) + "%)"; }
+    function pos() { track.style.transform = (horiz ? "translateX(-" : "translateY(-") + (c.i * 100 / (c.n + 1)) + "%)"; }
     function label() { cnt.textContent = (c.n ? (c.i % c.n) + 1 : 0) + " / " + c.n; }
     function snap() { track.classList.add("nt"); pos(); void track.offsetHeight; track.classList.remove("nt"); }
     c.set = function (slides) {
       c.n = slides.length;
+      if (horiz) track.style.width = ((c.n + 1) * 100) + "%";
       track.innerHTML = slides.concat(slides.slice(0, 1)).join("");
       if (c.i >= c.n) c.i = 0;
       snap(); label();
@@ -700,8 +776,92 @@
     return c;
   }
 
+  // Carousel dua tingkat untuk Sales by SMT.
+  // Arah geser: "x" = antar SMT horizontal, hari ini <-> MTD vertikal (default).
+  //             "y" = antar SMT vertikal,   hari ini <-> MTD horizontal.
+  var STAFF_SMT_AXIS = "y";
+  function makeGroupCarousel(panelId, prefix, ms) {
+    var OUT_X = STAFF_SMT_AXIS === "x";
+    var panel = document.getElementById(panelId), track = document.getElementById(prefix + "-track"),
+        cnt = document.getElementById(prefix + "-count"), vp = document.getElementById(prefix + "-vp");
+    var c = { p: 0, oi: 0, G: 0, N: 0, steps: [], sizes: [], timer: null, hold: false, t: null };
+    function fit() { if (vp.clientHeight > 0) panel.style.setProperty("--sh", vp.clientHeight + "px"); }
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(vp); else window.addEventListener("resize", fit);
+    c.fit = fit;
+    function inner(g) { var el = track.children[g]; return el && el.firstChild; }
+    function setInner(g, s, anim) {
+      var el = inner(g); if (!el) return;
+      var n = c.sizes[g % c.G] || 1;
+      if (!anim) el.classList.add("nt");
+      el.style.transform = (OUT_X ? "translateY(-" : "translateX(-") + (s * 100 / n) + "%)";
+      if (!anim) { void el.offsetHeight; el.classList.remove("nt"); }
+    }
+    function setOuter(i, anim) {
+      c.oi = i;
+      if (!anim) track.classList.add("nt");
+      track.style.transform = (OUT_X ? "translateX(-" : "translateY(-") + (i * 100 / (c.G + 1)) + "%)";
+      if (!anim) { void track.offsetHeight; track.classList.remove("nt"); }
+    }
+    function label() { cnt.textContent = (c.N ? c.p + 1 : 0) + " / " + c.N; }
+    function settle() {
+      clearTimeout(c.t);
+      c.t = setTimeout(function () {
+        var cur = c.steps[c.p];
+        if (c.oi === c.G) setOuter(0, false);
+        for (var g = 0; g <= c.G; g++) if (g % c.G !== cur.g) setInner(g, 0, false);
+      }, 750);
+    }
+    c.set = function (groups) {
+      c.G = groups.length;
+      c.sizes = groups.map(function (g) { return g.length; });
+      c.steps = [];
+      groups.forEach(function (g, gi) { g.forEach(function (_, si) { c.steps.push({ g: gi, s: si }); }); });
+      c.N = c.steps.length;
+      track.style.display = OUT_X ? "flex" : "";
+      track.style.width = OUT_X ? (c.G + 1) * 100 + "%" : "";
+      track.innerHTML = groups.concat(groups.slice(0, 1)).map(function (gr) {
+        var gs = OUT_X ? ' style="width:' + 100 / (c.G + 1) + '%;flex:none"' : '';
+        var is = OUT_X ? 'height:' + gr.length * 100 + '%;flex-direction:column' : 'width:' + gr.length * 100 + '%';
+        return '<div class="grp"' + gs + '><div class="itrack" style="' + is + '">' + gr.join("") + '</div></div>';
+      }).join("");
+      if (c.p >= c.N) c.p = 0;
+      label();
+      if (!c.N) return;
+      var cur = c.steps[c.p];
+      setOuter(cur.g, false);
+      for (var g = 0; g <= c.G; g++) setInner(g, g === cur.g ? cur.s : 0, false);
+    };
+    c.go = function (d) {
+      if (!c.N) return;
+      if (c.oi === c.G) setOuter(0, false);
+      var cur = c.steps[c.p], np = (c.p + d + c.N) % c.N, nx = c.steps[np];
+      c.p = np; label();
+      if (nx.g === cur.g) { setInner(nx.g, nx.s, true); return; }
+      setInner(nx.g, nx.s, false);
+      if (d > 0) setOuter(np === 0 ? c.G : nx.g, true);
+      else { if (cur.g === 0) setOuter(c.G, false); setOuter(nx.g, true); }
+      settle();
+    };
+    c.play = function () {
+      clearInterval(c.timer);
+      c.timer = setInterval(function () { if (!c.hold) c.go(1); }, ms);
+    };
+    panel.addEventListener("mouseenter", function () { c.hold = true; });
+    panel.addEventListener("mouseleave", function () { c.hold = false; });
+    panel.addEventListener("focusin", function () { c.hold = true; });
+    panel.addEventListener("focusout", function () { c.hold = false; });
+    document.getElementById(prefix + "-prev").addEventListener("click", function () { c.go(-1); c.play(); });
+    document.getElementById(prefix + "-next").addEventListener("click", function () { c.go(1); c.play(); });
+    var btn = document.getElementById(prefix + "-mode");
+    btn.addEventListener("click", function () {
+      var tbl = panel.classList.toggle("tablemode");
+      btn.textContent = tbl ? "Satu per satu" : "Tampilkan tabel";
+    });
+    return c;
+  }
+
   window.cDept = makeCarousel("dept-panel", "dept", SLIDE_MS);
-  window.cStaff = makeCarousel("staff-panel", "staff", SLIDE_MS);
+  window.cStaff = makeGroupCarousel("staff-panel", "staff", STAFF_SLIDE_MS);
   cDept.set(deptSlides()); cStaff.set(staffSlides());
   cDept.fit(); cStaff.fit();
   cDept.play(); cStaff.play();
