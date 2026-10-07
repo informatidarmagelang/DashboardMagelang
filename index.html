@@ -155,10 +155,16 @@
   #dept-panel .m .l, #dept-panel .slide.hasimg .m .l { font-size: clamp(.7rem, calc(var(--sh) * .043), 1rem); }
   #dept-panel .m .v, #dept-panel .slide.hasimg .m .v { font-size: clamp(.9rem, min(calc(var(--sh) * .07), 2.4vw), 1.8rem); }
   #dept-panel .photo { width: 32%; }
-  /* ---- Sales by SMT: nama lebih kecil ---- */
-  #staff-panel .s-title, #staff-panel .s-title.mid, #staff-panel .s-title.long { font-size: clamp(.95rem, min(calc(var(--sh) * .06), 1.7vw), 1.5rem); line-height: 1.15; gap: 6px; }
-  #staff-panel .s-title .code { font-size: .7em; }
-  #staff-panel .s-title .tag { font-size: .7rem; padding: 1px 8px; }
+  /* ---- Sales by SMT: teks mengikuti tinggi slide (--sh) agar pas per slide ---- */
+  #staff-panel .slide { gap: calc(var(--sh) * .03); padding: 4px 10px; }
+  #staff-panel .s-main { gap: calc(var(--sh) * .04); }
+  #staff-panel .s-title, #staff-panel .s-title.mid, #staff-panel .s-title.long { font-size: clamp(.8rem, min(calc(var(--sh) * .048), 1.3vw), 1.2rem); line-height: 1.15; gap: 6px; }
+  #staff-panel .s-title .code { font-size: .8em; }
+  #staff-panel .s-title .tag { font-size: .65rem; padding: 1px 7px; }
+  #staff-panel .sgrid, #staff-panel .slide.hasimg .sgrid { grid-template-columns: repeat(2, 1fr); gap: calc(var(--sh) * .025) 14px; }
+  #staff-panel .m .l, #staff-panel .slide.hasimg .m .l { font-size: clamp(.7rem, calc(var(--sh) * .043), 1rem); }
+  #staff-panel .m .v, #staff-panel .slide.hasimg .m .v { font-size: clamp(.9rem, min(calc(var(--sh) * .07), 2.4vw), 1.8rem); }
+  #staff-panel .photo { width: 32%; }
 </style>
 </head>
 <body>
@@ -447,23 +453,22 @@
 
   // Kolom: NIP, nama, shift, target hari ini, target FP, target Comser, sales hari ini, FP, prod., CR FP (%), Comser
   var STAFF = [
-    ["168804", "AGUS", "PAGI", 15312000, 2, 56040, 8574368, 1, 7, 14.29, 0],
-    ["168809", "AZIZ", "OFF", 0, 0, 0, 0, 0, 0, 0, 0],
-    ["169169", "ZAKY", "SIANG", 15312000, 2, 56040, 3131532, 1, 2, 50, 0],
-    ["169378", "YOHANES", "OFF", 0, 0, 0, 482252, 0, 0, 0, 0],
-    ["171212", "ACHMAD", "PAGI", 15312000, 2, 56040, 4952070, 1, 1, 100, 0],
-    ["171508", "RIKA", "OFF", 0, 0, 0, 7794324, 1, 5, 20, 0],
-    ["172577", "EVI", "OFF", 0, 0, 0, 6527477, 0, 4, 0, 0],
-    ["176193", "CANDRA", "OFF", 0, 0, 0, 6880807, 1, 8, 12.5, 0],
-    ["176195", "ZAHRO", "PAGI", 15312000, 2, 56040, 4081980, 1, 2, 50, 0],
-    ["180855", "NIA", "PAGI", 15312000, 2, 56040, 0, 0, 0, 0, 0],
-    ["184270", "DEWI", "OFF", 0, 0, 0, 11962972, 3, 6, 50, 0],
-    ["190761", "CAHYANI", "SIANG", 15312000, 2, 56040, 0, 0, 0, 0, 0],
-    ["192294", "CHINTYA", "PAGI", 15312000, 2, 56040, 0, 0, 0, 0, 0],
-    ["192295", "DEVA", "OFF", 0, 0, 0, 0, 0, 0, 0, 0],
-    ["192918", "SUHARI", "SIANG", 15312000, 2, 56040, 5109008, 0, 3, 0, 0],
-    ["193683", "NADIA", "PAGI", 15312000, 2, 56040, 0, 0, 0, 0, 0],
-    ["195936", "TINGKAS", "SIANG", 15312000, 2, 56040, 3242250, 1, 4, 25, 0]
+    ["168804", "AGUS", "SIANG", 12776000, 2, 46700, 12616304, 0, 3, 0, 0],
+    ["168809", "AZIZ", "PAGI", 12776000, 2, 46700, 1320720, 0, 1, 0, 0],
+    ["169169", "ZAKY", "OFF", 0, 0, 0, 0, 0, 0, 0, 0],
+    ["169378", "YOHANES", "PAGI", 12776000, 2, 46700, 394594, 0, 0, 0, 0],
+    ["171212", "ACHMAD", "OFF", 0, 0, 0, 0, 0, 0, 0, 0],
+    ["171508", "RIKA", "SIANG", 12776000, 2, 46700, 4023334, 1, 2, 50, 0],
+    ["172577", "EVI", "PAGI", 12776000, 2, 46700, 3008017, 1, 4, 25, 0],
+    ["176193", "CANDRA", "PAGI", 12776000, 2, 46700, 1342702, 0, 0, 0, 0],
+    ["176195", "ZAHRO", "OFF", 0, 0, 0, 0, 0, 0, 0, 0],
+    ["180855", "NIA", "PAGI", 12776000, 2, 46700, 3718919, 1, 1, 100, 0],
+    ["184270", "DEWI", "SIANG", 12776000, 2, 46700, 4810001, 2, 3, 66.67, 0],
+    ["190761", "CAHYANI", "OFF", 0, 0, 0, 0, 0, 0, 0, 0],
+    ["192294", "CHINTYA", "SIANG", 12776000, 2, 46700, 6595496, 0, 2, 0, 0],
+    ["192918", "SUHARI", "SIANG", 12776000, 2, 46700, 3140450, 0, 1, 0, 260360],
+    ["193683", "NADIA", "OFF", 0, 0, 0, 4687117, 0, 1, 0, 0],
+    ["195936", "TINGKAS", "SIANG", 12776000, 2, 46700, 0, 0, 0, 0, 0]
   ];
 
   function renderStaff() {
